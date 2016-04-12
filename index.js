@@ -13,6 +13,7 @@ module.exports = publish;
  * @params options.oss.accessKeyId
  * @params options.oss.secretAccessKey
  * @params options.oss.endpoint
+ * @params options.headers
  */
 function publish(options) {
   const oss = options.oss;
@@ -46,19 +47,17 @@ function publish(options) {
       }
     }
 
-    onEnd();
-
-    // client.putObject(Object.assign({
-    //     ContentType: mime.lookup(file.relative),
-    //     CacheControl: 'no-cache',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
-    //     ContentEncoding: 'utf-8',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.11
-    //     ServerSideEncryption: 'AES256',
-    //     Expires: null                     // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21
-    //   }, header || {}, {
-    //     Bucket: oss.bucket,
-    //     Key: urlJoin(prefix, uid, file.relative), // 注意, Key 的值不能以 / 开头, 否则会返回错误.
-    //     Body: file.contents
-    //   }), cb);
+    client.putObject(Object.assign({
+        ContentType: mime.lookup(file.relative),
+        CacheControl: !options.genShortId ? 'no-cache' : 'max-age=7200,s-maxage=3600',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
+        ContentEncoding: 'utf-8',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.11
+        ServerSideEncryption: 'AES256'
+        // Expires: null                     // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21
+      }, options.headers || {}, {
+        Bucket: oss.bucket,
+        Key: urlJoin(prefix, uid, file.relative), // 注意, Key 的值不能以 / 开头, 否则会返回错误.
+        Body: file.contents
+      }), onEnd);
 
   }, function(cb){
     gutil.log('OSS publish finished,  %s files published', gutil.colors.cyan.underline(distFiles.length));

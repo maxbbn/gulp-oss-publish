@@ -28,6 +28,12 @@ function publish(options) {
     apiVersion: '2013-10-15'
   });
 
+  const defaultHeaders = {
+    CacheControl: !options.genShortId ? 'no-cache' : 'max-age=7200,s-maxage=3600',
+    ContentEncoding: 'utf-8',
+    ServerSideEncryption: 'AES256'
+  };
+
   var distFiles = [];
 
   return through2.obj(function(file, enc, cb){
@@ -47,15 +53,10 @@ function publish(options) {
       }
     }
 
-    client.putObject(Object.assign({
-        ContentType: mime.lookup(file.relative),
-        CacheControl: !options.genShortId ? 'no-cache' : 'max-age=7200,s-maxage=3600',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
-        ContentEncoding: 'utf-8',         // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.11
-        ServerSideEncryption: 'AES256'
-        // Expires: null                     // 参考: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21
-      }, options.headers || {}, {
+    client.putObject(Object.assign(defaultHeaders, options.headers || {}, {
         Bucket: oss.bucket,
-        Key: urlJoin(prefix, uid, file.relative), // 注意, Key 的值不能以 / 开头, 否则会返回错误.
+        ContentType: mime.lookup(file.relative),
+        Key: urlJoin(keyBase, file.relative), // 注意, Key 的值不能以 / 开头, 否则会返回错误.
         Body: file.contents
       }), onEnd);
 

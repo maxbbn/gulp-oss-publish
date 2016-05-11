@@ -3,8 +3,8 @@
 Publish files with oss
 
 - 1. Can publish files with prefix and shortId
-- 2. simple
-- 3. usable
+- 2. Simple
+- 3. Usable
 
 
 When genShortId enabled： oss key will be `${prefix}/${shortId}/${filePath}` 

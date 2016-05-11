@@ -17,9 +17,9 @@ module.exports = publish;
  */
 function publish(options) {
   const oss = options.oss;
-  const prefix = options.prefix || '';
-  const uid = options.genShortId ? shortId.generate() : '';
-  const keyBase = urlJoin(prefix, uid);
+  const prefix = options.prefix;
+  const uid = options.genShortId && shortId.generate();
+  const keyBase = prefix && uid && urlJoin(prefix, uid);
 
   var client = new ALY.OSS({
     accessKeyId: oss.accessKeyId,
@@ -40,9 +40,7 @@ function publish(options) {
     if (!file) return cb();
     if (!file.isBuffer()) return cb();
     this.push(file);
-    const key = urlJoin(keyBase, file.relative);
-
-    //console.log(key);
+    const key = keyBase ? urlJoin(keyBase, file.relative) : file.relative;
 
     function onEnd(err) {
       if (!err) {
@@ -56,14 +54,14 @@ function publish(options) {
     client.putObject(Object.assign(defaultHeaders, options.headers || {}, {
         Bucket: oss.bucket,
         ContentType: mime.lookup(file.relative),
-        Key: urlJoin(keyBase, file.relative), // 注意, Key 的值不能以 / 开头, 否则会返回错误.
+        Key: key, // 注意, Key 的值不能以 / 开头, 否则会返回错误.
         Body: file.contents
       }), onEnd);
 
   }, function(cb){
     gutil.log('OSS publish finished,  %s files published', gutil.colors.cyan.underline(distFiles.length));
     gutil.log('dist bucket: %s', gutil.colors.cyan(oss.bucket));
-    gutil.log('dist root: %s', gutil.colors.cyan(keyBase));
+    gutil.log('dist root: %s', gutil.colors.cyan(keyBase || '[empty]'));
     distFiles.forEach(function (key) {
       gutil.log('file: %s', key);
     });

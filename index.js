@@ -1,3 +1,4 @@
+'use strict';
 var ALY = require('aliyun-sdk');
 var mime = require('mime');
 var path = require('path');
@@ -19,8 +20,17 @@ module.exports = publish;
 function publish(options) {
   const oss = options.oss;
   const prefix = options.prefix;
-  const uid = options.genShortId && shortId.generate();
-  const keyBase = prefix && uid && urlJoin(prefix, uid);
+
+  let parts = [];
+
+  if (prefix) {
+    parts.push(prefix);
+  }
+  if (options.genShortId) {
+    parts.push(shortId.generate());
+  }
+
+  const keyBase = parts.length ? urlJoin.apply(null, parts) : '';
 
   var client = new ALY.OSS({
     accessKeyId: oss.accessKeyId,
